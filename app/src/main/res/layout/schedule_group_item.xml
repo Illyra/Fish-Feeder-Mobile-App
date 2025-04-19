@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    android:background="#3a4f50"
+    android:backgroundTint="#3a4f50"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="2dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/scheduleNameText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/dateRangeText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="16dp"
+            android:gravity="end">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/editScheduleButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:text="Edit"
+                android:textColor="#FFFFFF"
+                app:icon="@android:drawable/ic_menu_edit"
+                app:iconTint="#FFFFFF"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/deleteScheduleButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delete"
+                android:textColor="#FFFFFF"
+                app:backgroundTint="#F44336"
+                app:cornerRadius="8dp"
+                app:icon="@android:drawable/ic_menu_delete"
+                app:iconTint="#FFFFFF" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView> 

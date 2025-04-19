@@ -1,0 +1,111 @@
+AndroidManifest.xml
+<uses-permission android:name="android.permission.SEND_SMS"/>
+<uses-permission android:name="android.permission.READ_PHONE_STATE"/>
+
+SmsUtils.java
+package com.example.myapplication.utils;
+
+import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.telephony.SmsManager;
+import android.widget.Toast;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.Manifest;
+
+public class SmsUtils {
+    private static final int SMS_PERMISSION_REQUEST_CODE = 1;
+
+    public static void sendScheduleSms(Activity activity, String phoneNumber, String fishName, int weekNumber, List<FeedingSchedule> schedules) {
+        if (checkSmsPermission(activity)) {
+            StringBuilder messageBuilder = new StringBuilder();
+            messageBuilder.append("Feeding Schedule for ").append(fishName)
+                        .append(" - Week ").append(weekNumber).append("\n\n");
+
+            float totalDailyFeed = 0;
+            for (FeedingSchedule schedule : schedules) {
+                messageBuilder.append("Time: ").append(schedule.getFeedingTime())
+                            .append(" - ").append(schedule.getFeedQuantity())
+                            .append("g\n");
+                totalDailyFeed += schedule.getFeedQuantity();
+            }
+            
+            messageBuilder.append("\nTotal Daily Feed: ").append(totalDailyFeed).append("g");
+
+            try {
+                SmsManager smsManager = SmsManager.getDefault();
+                ArrayList<String> parts = smsManager.divideMessage(messageBuilder.toString());
+                smsManager.sendMultipartTextMessage(phoneNumber, null, parts, null, null);
+                Toast.makeText(activity, "Schedule SMS sent successfully", Toast.LENGTH_SHORT).show();
+            } catch (Exception e) {
+                Toast.makeText(activity, "Failed to send SMS: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+
+    public static boolean checkSmsPermission(Activity activity) {
+        if (ContextCompat.checkSelfPermission(activity, Manifest.permission.SEND_SMS) 
+            != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(activity,
+                new String[]{Manifest.permission.SEND_SMS},
+                SMS_PERMISSION_REQUEST_CODE);
+            return false;
+        }
+        return true;
+    }
+}
+
+
+FeedingScheduleSetup.java
+
+// Add to your existing imports
+import com.example.myapplication.utils.SmsUtils;
+
+public class FeedingScheduleSetup extends AppCompatActivity {
+    // Add permission handling
+    private static final int SMS_PERMISSION_REQUEST_CODE = 1;
+    
+    // Modify your save function to send SMS after successful save
+    private void saveFeedingTimesForWeek() {
+        if (TextUtils.isEmpty(currentFishName) || currentFishName.equals("Select Fish")) {
+            return;
+        }
+        
+        viewModel.getFishByName(currentFishName).observe(this, fish -> {
+            if (fish != null) {
+                long fishId = fish.getId();
+                
+                viewModel.deleteSchedulesForWeek(fishId, currentEditingWeek).observe(this, deleteSuccess -> {
+                    if (deleteSuccess) {
+                        List<FeedingSchedule> schedules = collectFeedingSchedules();
+                        viewModel.saveFeedingSchedules(schedules);
+                        
+                        // Send SMS if phone number exists
+                        String phoneNumber = fish.getPhoneNumber();
+                        if (!TextUtils.isEmpty(phoneNumber)) {
+                            SmsUtils.sendScheduleSms(this, phoneNumber, currentFishName, 
+                                                   currentEditingWeek, schedules);
+                        }
+                        
+                        closeDailyScheduleEditor();
+                        confirmFishSelection();
+                        Toast.makeText(this, "Schedule saved successfully", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            }
+        });
+    }
+
+    // Add permission result handling
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == SMS_PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "SMS permission granted", Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(this, "SMS permission denied", Toast.LENGTH_SHORT).show();
+            }
+        }
+    }
+}

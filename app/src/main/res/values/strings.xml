@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Fish Feeder</string>
+
+    <string-array name="fish_types">
+        <item>Bangus</item>
+        <item>Tilapia</item>
+        <item>Catfish</item>
+        <item>Carp</item>
+    </string-array>
+
+</resources>

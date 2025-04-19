@@ -1,0 +1,587 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:backgroundTint="#FFFFFF">
+
+    <!-- Header Section -->
+    <TextView
+        android:id="@+id/feedingSetupTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:fontFamily="@font/poppins"
+        android:text="Feeding Setup"
+        android:textColor="#000000"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Scrollable Content -->
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginBottom="16dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toTopOf="@+id/navigationSection"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/feedingSetupTitle">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="16dp">
+
+            <!-- Fish Selection -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/fishSelectionCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/feedingSetupTitle">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#EFE9F4"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/poppins"
+                        android:text="Select Fish Type"
+                        android:textColor="#3A4F50"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/fish_dropdown"
+                        android:layout_width="match_parent"
+                        android:layout_height="54dp"
+                        android:layout_marginTop="8dp"
+                        android:background="#B3B3B3"
+                        android:backgroundTint="#929292" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Fish Information Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/fishInfoCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:background="#EEE8F3"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/fishSelectionCard">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#EEE8F3"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#0EF5CB"
+                        android:fontFamily="@font/poppins"
+                        android:padding="8dp"
+                        android:text="Fish Information"
+                        android:textColor="#000000"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/origFishCountOutput"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/poppins"
+                            android:text="Original Fish Count:"
+                            android:textColor="#000000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Count"
+                            app:errorEnabled="true">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/originalFishCountInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="number"
+                                android:textColor="#000000" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/deadFishCountOutput"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/poppins"
+                            android:text="Dead Fish Count:"
+                            android:textColor="#000000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Count"
+                            app:errorEnabled="true">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/deadFishCount"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="number"
+                                android:textColor="#000000" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/fishLengthOutput"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/poppins"
+                            android:text="Length (cm):"
+                            android:textColor="#000000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Length"
+                            app:errorEnabled="true"
+                            app:suffixText="cm">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/fishLengthInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="numberDecimal"
+                                android:textColor="#000000" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/fishWidthOutput"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/poppins"
+                            android:text="Width (cm):"
+                            android:textColor="#000000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Width"
+                            app:errorEnabled="true"
+                            app:suffixText="cm">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/fishWidthInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="numberDecimal"
+                                android:textColor="#000000" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/fishWeightOutput"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/poppins"
+                            android:text="Weight (g):"
+                            android:textColor="#000000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Weight"
+                            app:errorEnabled="true"
+                            app:suffixText="g">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/fishWeightInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="numberDecimal"
+                                android:textColor="#000000" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/aliveFishCountResult"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="@font/poppins"
+                        android:text="Alive Fish Count: 0"
+                        android:textColor="#0EF5CB"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Phone Number Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/phoneNumberCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:background="#EFE9F4"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#EFE9F4"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#0EF5CB"
+                        android:fontFamily="@font/poppins"
+                        android:padding="8dp"
+                        android:text="Contact Information"
+                        android:textColor="#000000"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/phoneNumberLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/poppins"
+                            android:text="Phone Number:"
+                            android:textColor="#000000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Enter phone number"
+                            app:errorEnabled="true"
+                            app:prefixText="+63">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/phoneNumberInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="phone"
+                                android:maxLength="10"
+                                android:textColor="#000000" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Feeding Settings Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/feedingSettingsCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="12dp"
+                android:background="#EFE9F4"
+                app:cardCornerRadius="8dp"
+                app:cardElevation="4dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/phoneNumberCard">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#EFE9F4"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="#0EF5CB"
+                        android:fontFamily="@font/poppins"
+                        android:padding="8dp"
+                        android:text="Feeding Settings"
+                        android:textColor="#000000"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/feed_amount_text"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/poppins"
+                            android:text="Feed per fish:"
+                            android:textColor="#000000"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:hint="Amount"
+                            app:errorEnabled="true"
+                            app:suffixText="g/fish">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/feedPerFishInput"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="numberDecimal"
+                                android:textColor="#000000" />
+                        </com.google.android.material.textfield.TextInputLayout>
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/total_feed_amount_output"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:fontFamily="@font/poppins"
+                        android:text="Total feed amount: 0g"
+                        android:textColor="#3A4F50"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/calculateFeedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:backgroundTint="#0EF5CB"
+                        android:fontFamily="@font/poppins"
+                        android:text="Calculate Feed Amount"
+                        android:textColor="#000000" />
+
+                    <Button
+                        android:id="@+id/saveFeedingSetupButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:backgroundTint="#3A4F50"
+                        android:fontFamily="@font/poppins"
+                        android:text="Save Feeding Setup"
+                        android:textColor="#FFFFFF" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Navigation Bar -->
+    <View
+        android:id="@+id/navigationSection"
+        android:layout_width="435dp"
+        android:layout_height="111dp"
+        android:background="#3A4F50"
+        android:backgroundTint="#3A4F50"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Navigation Button (Fish Template) - Left -->
+    <View
+        android:id="@+id/fishTemplateButton"
+        android:layout_width="80dp"
+        android:layout_height="70dp"
+        app:layout_constraintBottom_toBottomOf="@+id/navigationSection"
+        app:layout_constraintEnd_toStartOf="@+id/dashboardButton"
+        app:layout_constraintStart_toStartOf="@+id/navigationSection"
+        app:layout_constraintTop_toTopOf="@+id/navigationSection" />
+
+    <TextView
+        android:id="@+id/fishTemplateText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/poppins"
+        android:text="Templates"
+        android:textAlignment="center"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/fishTemplateButton"
+        app:layout_constraintEnd_toEndOf="@+id/fishTemplateButton"
+        app:layout_constraintStart_toStartOf="@+id/fishTemplateButton" />
+
+    <ImageView
+        android:id="@+id/fishTemplateIcon"
+        android:layout_width="36dp"
+        android:layout_height="34dp"
+        android:contentDescription="Fish template icon"
+        app:layout_constraintBottom_toTopOf="@+id/fishTemplateText"
+        app:layout_constraintEnd_toEndOf="@+id/fishTemplateButton"
+        app:layout_constraintStart_toStartOf="@+id/fishTemplateButton"
+        app:layout_constraintTop_toTopOf="@+id/fishTemplateButton"
+        app:srcCompat="@drawable/template_icon"
+        app:tint="@android:color/white" />
+
+    <!-- Navigation Button (Dashboard) - Center -->
+    <View
+        android:id="@+id/dashboardButton"
+        android:layout_width="80dp"
+        android:layout_height="70dp"
+        app:layout_constraintBottom_toBottomOf="@+id/navigationSection"
+        app:layout_constraintEnd_toEndOf="@+id/navigationSection"
+        app:layout_constraintStart_toStartOf="@+id/navigationSection"
+        app:layout_constraintTop_toTopOf="@+id/navigationSection" />
+
+    <TextView
+        android:id="@+id/homeText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/poppins"
+        android:text="Home"
+        android:textAlignment="center"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/dashboardButton"
+        app:layout_constraintEnd_toEndOf="@+id/dashboardButton"
+        app:layout_constraintStart_toStartOf="@+id/dashboardButton" />
+
+    <ImageView
+        android:id="@+id/imageView5"
+        android:layout_width="36dp"
+        android:layout_height="34dp"
+        android:contentDescription="Dashboard icon"
+        app:layout_constraintBottom_toTopOf="@+id/homeText"
+        app:layout_constraintEnd_toEndOf="@+id/dashboardButton"
+        app:layout_constraintStart_toStartOf="@+id/dashboardButton"
+        app:layout_constraintTop_toTopOf="@+id/dashboardButton"
+        app:srcCompat="@drawable/img05"
+        app:tint="@android:color/white" />
+
+    <!-- Navigation Button (Edit Schedules) - Right -->
+    <View
+        android:id="@+id/editSchedulesButton"
+        android:layout_width="80dp"
+        android:layout_height="70dp"
+        app:layout_constraintBottom_toBottomOf="@+id/navigationSection"
+        app:layout_constraintEnd_toEndOf="@+id/navigationSection"
+        app:layout_constraintStart_toEndOf="@+id/dashboardButton"
+        app:layout_constraintTop_toTopOf="@+id/navigationSection" />
+
+    <TextView
+        android:id="@+id/editSchedulesText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/poppins"
+        android:text="Schedules"
+        android:textAlignment="center"
+        android:textColor="#FFFFFF"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/editSchedulesButton"
+        app:layout_constraintEnd_toEndOf="@+id/editSchedulesButton"
+        app:layout_constraintStart_toStartOf="@+id/editSchedulesButton" />
+
+    <ImageView
+        android:id="@+id/editSchedulesIcon"
+        android:layout_width="36dp"
+        android:layout_height="34dp"
+        android:contentDescription="Edit schedules icon"
+        app:layout_constraintBottom_toTopOf="@+id/editSchedulesText"
+        app:layout_constraintEnd_toEndOf="@+id/editSchedulesButton"
+        app:layout_constraintStart_toStartOf="@+id/editSchedulesButton"
+        app:layout_constraintTop_toTopOf="@+id/editSchedulesButton"
+        app:srcCompat="@drawable/edit"
+        app:tint="@android:color/white" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
