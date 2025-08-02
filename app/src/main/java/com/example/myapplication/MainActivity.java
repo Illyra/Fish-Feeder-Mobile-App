@@ -282,7 +282,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void loadFeedingScheduleForFish(long fishId) {
-        ScrollView scheduleContainer = findViewById(R.id.schedulesContainer);
+        LinearLayout scheduleContainer = findViewById(R.id.schedulesContainer);
         TextView scheduleTitle = findViewById(R.id.editTextText2);
         
         if (scheduleContainer != null) {
@@ -317,7 +317,7 @@ public class MainActivity extends AppCompatActivity {
                         return Long.compare(date1, date2); // Ascending order (oldest first)
                     });
                     
-                    LinearLayout scheduleList = findViewById(R.id.schedulesContainerDetailsParent);
+                    LinearLayout scheduleList = findViewById(R.id.schedulesContainer);
                     
                     if (scheduleList != null) {
                         scheduleList.removeAllViews();
@@ -383,7 +383,7 @@ public class MainActivity extends AppCompatActivity {
                     }
                 } else {
                     // No schedules found
-                    LinearLayout scheduleList = findViewById(R.id.schedulesContainerDetailsParent);
+                    LinearLayout scheduleList = findViewById(R.id.schedulesContainer);
                     if (scheduleList != null) {
                         scheduleList.removeAllViews();
                         TextView noScheduleText = new TextView(this);

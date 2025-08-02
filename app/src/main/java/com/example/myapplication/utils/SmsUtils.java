@@ -34,7 +34,7 @@ public class SmsUtils {
      * @param schedules The schedules to send
      */
     public static void sendScheduleNotification(Activity activity, String phoneNumber, String fishName, List<FeedingSchedule> schedules) {
-        if (TextUtils.isEmpty(phoneNumber)) return;
+        if (TextUtils.isEmpty(phoneNumber) || schedules == null || schedules.isEmpty()) return;
 
         // Check for SMS permission
         if (!checkSmsPermission(activity)) {
@@ -42,50 +42,64 @@ public class SmsUtils {
         }
 
         StringBuilder message = new StringBuilder();
-        message.append("New feeding schedule for ").append(fishName).append(":\n");
+        message.append("New feeding schedule for ").append(fishName).append("\n\n");
         
         // Sort schedules by date and time
         Collections.sort(schedules, (s1, s2) -> {
-            // First compare by date
-            int dateCompare = Long.compare(s1.getStartDate(), s2.getStartDate());
-            if (dateCompare != 0) {
-                return dateCompare;
+            // First compare by time
+            int timeCompare = s1.getFeedingTime().compareTo(s2.getFeedingTime());
+            if (timeCompare != 0) {
+                return timeCompare;
             }
-            
-            // If dates are the same, compare by time
-            return s1.getFeedingTime().compareTo(s2.getFeedingTime());
+            // If times are the same, compare by date
+            return Long.compare(s1.getStartDate(), s2.getStartDate());
         });
         
-        // Group schedules by date
-        Map<Long, List<FeedingSchedule>> schedulesByDate = new TreeMap<>();
+        // Group schedules by time and quantity
+        Map<String, List<FeedingSchedule>> schedulesByTime = new TreeMap<>();
         for (FeedingSchedule schedule : schedules) {
-            long date = schedule.getStartDate();
-            if (!schedulesByDate.containsKey(date)) {
-                schedulesByDate.put(date, new ArrayList<>());
+            String timeKey = schedule.getFeedingTime() + "_" + schedule.getFeedQuantity();
+            if (!schedulesByTime.containsKey(timeKey)) {
+                schedulesByTime.put(timeKey, new ArrayList<>());
             }
-            schedulesByDate.get(date).add(schedule);
+            schedulesByTime.get(timeKey).add(schedule);
         }
         
-        // Format the message with dates and times
+        // Format the message with date ranges and times
         SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy", Locale.getDefault());
-        for (Map.Entry<Long, List<FeedingSchedule>> entry : schedulesByDate.entrySet()) {
-            long date = entry.getKey();
-            List<FeedingSchedule> dateSchedules = entry.getValue();
-            
-            // Add date header
-            message.append("\n").append(dateFormat.format(new Date(date))).append(":\n");
-            
-            // Sort schedules for this date by time
-            Collections.sort(dateSchedules, (s1, s2) -> s1.getFeedingTime().compareTo(s2.getFeedingTime()));
-            
-            // Add feeding times for this date
-            for (FeedingSchedule schedule : dateSchedules) {
-                message.append("• ")
-                      .append(schedule.getFeedingTime())
-                      .append(" - ")
-                      .append(String.format("%.1fg", schedule.getFeedQuantity()))
-                      .append("\n");
+        
+        // Add date range header if we have schedules
+        if (!schedules.isEmpty()) {
+            // Find min startDate and max endDate
+            long minStartDate = Long.MAX_VALUE;
+            long maxEndDate = Long.MIN_VALUE;
+            for (FeedingSchedule s : schedules) {
+                if (s.getStartDate() < minStartDate) minStartDate = s.getStartDate();
+                if (s.getEndDate() > maxEndDate) maxEndDate = s.getEndDate();
             }
+            
+            // Add date range
+            message.append(dateFormat.format(new Date(minStartDate)))
+                  .append(" - ")
+                  .append(dateFormat.format(new Date(maxEndDate)))
+                  .append(":\n");
+        }
+        
+        // Add feeding times with quantities
+        for (Map.Entry<String, List<FeedingSchedule>> entry : schedulesByTime.entrySet()) {
+            String[] timeParts = entry.getKey().split("_");
+            String time = timeParts[0];
+            String quantity = timeParts[1];
+            
+            message.append("• ")
+                  .append(time)
+                  .append(" - ")
+                  .append(quantity)
+                  .append("g\n");
+        }
+        // Always ensure the message ends with a newline for Arduino parsing
+        if (message.length() > 0 && message.charAt(message.length() - 1) != '\n') {
+            message.append('\n');
         }
 
         try {
