@@ -108,23 +108,67 @@ void loop() {
     currentWeight = scale.getData();
     lastLoadcellMS = now;
   }
+  
+  // DEBUG: Print ALL GSM module output
+  if (gsm.available()) {
+    Serial.print("GSM RAW: ");
+    while (gsm.available()) {
+      char c = gsm.read();
+      Serial.print(c);
+    }
+    Serial.println();
+  }
+  
   checkSMS();
   checkFeed();
 #endif
 }
 
 void setupGSM() {
-  const char* cmds[] = {"AT", "AT+CMGF=1", "AT+CNMI=1,2,0,0,0", "AT+CMGDA=\"DEL ALL\""};
+  Serial.println(F("Setting up GSM..."));
+  
+  const char* cmds[] = {
+    "AT", 
+    "AT+CMGF=1", 
+    "AT+CNMI=1,2,0,0,0", 
+    "AT+CMGDA=\"DEL ALL\"",
+    "AT+CREG?",     // Network registration status
+    "AT+CSQ",       // Signal quality
+    "AT+CPIN?",     // SIM card status
+    "AT+CCID"       // SIM card ID
+  };
+  
   for (auto cmd : cmds) {
+    Serial.print(F("Sending: "));
+    Serial.println(cmd);
     sendAT(cmd);
-    delay(500);
+    delay(1000);  // Increased delay
   }
+  
+  Serial.println(F("GSM setup complete"));
 }
 
 void sendAT(const char* cmd) {
   gsm.println(cmd);
-  delay(200);
-  while (gsm.available()) Serial.write(gsm.read());
+  delay(500);  // Give more time for response
+  
+  Serial.print(F("Response: "));
+  String response = "";
+  unsigned long timeout = millis() + 2000; // 2 second timeout
+  
+  while (millis() < timeout) {
+    if (gsm.available()) {
+      char c = gsm.read();
+      Serial.write(c);
+      response += c;
+    }
+  }
+  
+  if (response.length() == 0) {
+    Serial.println(F("NO RESPONSE!"));
+  }
+  
+  Serial.println();
 }
 
 void sendSMS(const String& to, const String& text) {
