@@ -112,11 +112,19 @@ void loop() {
   // DEBUG: Print ALL GSM module output
   if (gsm.available()) {
     Serial.print("GSM RAW: ");
+    String rawData = "";
     while (gsm.available()) {
       char c = gsm.read();
       Serial.print(c);
+      rawData += c;
     }
     Serial.println();
+    Serial.println("--- END GSM RAW ---");
+    
+    // Also check if this looks like an SMS
+    if (rawData.indexOf("+CMT:") >= 0) {
+      Serial.println("*** SMS DETECTED IN RAW DATA! ***");
+    }
   }
   
   checkSMS();
@@ -182,48 +190,94 @@ void sendSMS(const String& to, const String& text) {
 
 void checkSMS() {
   while (gsm.available()) {
+    Serial.println("*** CHECKING SMS - GSM DATA AVAILABLE ***");
     String header = gsm.readStringUntil('\n');
+    Serial.print("SMS Header: ");
+    Serial.println(header);
+    
     if (header.indexOf("+CMT:") >= 0) {
+      Serial.println("*** SMS HEADER FOUND! ***");
       int p1 = header.indexOf('"');
       int p2 = header.indexOf('"', p1 + 1);
-      lastSender = header.substring(p1 + 1, p2);
-      delay(200);
-      String msg = gsm.readString();
-      processSMS(header, msg);
+      if (p1 >= 0 && p2 > p1) {
+        lastSender = header.substring(p1 + 1, p2);
+        Serial.print("Sender extracted: ");
+        Serial.println(lastSender);
+        
+        delay(200);
+        String msg = gsm.readString();
+        Serial.print("Message content: ");
+        Serial.println(msg);
+        Serial.println("--- END MESSAGE ---");
+        
+        processSMS(header, msg);
+      } else {
+        Serial.println("ERROR: Could not extract sender from header");
+      }
+    } else {
+      Serial.println("No +CMT: found in header");
     }
   }
 }
 
 void processSMS(const String& header, const String& msg) {
-  Serial.println(F("\nProcessing SMS..."));
-  if (!msg.startsWith("New feeding schedule")) return;
+  Serial.println(F("\n*** PROCESSING SMS ***"));
+  Serial.print(F("Message starts with: "));
+  Serial.println(msg.substring(0, min(30, (int)msg.length())));
+  
+  if (!msg.startsWith("New feeding schedule")) {
+    Serial.println(F("ERROR: Message does not start with 'New feeding schedule'"));
+    Serial.println(F("Expected: 'New feeding schedule'"));
+    Serial.print(F("Got: '"));
+    Serial.print(msg.substring(0, min(20, (int)msg.length())));
+    Serial.println(F("'"));
+    return;
+  }
 
+  Serial.println(F("✓ Message format validated"));
   scheduleCount = 0;
   String text = msg;
   text.replace("\r", "");
 
   // Parse date range
-  int dateStart = text.indexOf("Jul");
+  int dateStart = text.indexOf("Aug");  // Changed from "Jul" to "Aug"
   int dateEnd = text.indexOf(":", dateStart);
   if (dateStart > 0 && dateEnd > dateStart) {
     String dateLine = text.substring(dateStart, dateEnd);
+    Serial.print(F("Date line found: "));
+    Serial.println(dateLine);
+    
     int dashPos = dateLine.indexOf("-");
     if (dashPos > 0) {
       String startDate = dateLine.substring(0, dashPos);
       String endDate = dateLine.substring(dashPos + 1);
       
+      Serial.print(F("Start date: "));
+      Serial.println(startDate);
+      Serial.print(F("End date: "));
+      Serial.println(endDate);
+      
       uint32_t startDay = parseDate(startDate);
       uint32_t endDay = parseDate(endDate);
       
-      // Find all schedule lines
+      // Find all schedule lines (accept both • and -)
       int bulletPos = text.indexOf("•");
+      if (bulletPos < 0) bulletPos = text.indexOf("-", dateEnd); // Look for dash after date
+      
       while (bulletPos > 0 && scheduleCount < MAX_SCHEDULES) {
         int endLine = text.indexOf('\n', bulletPos);
         if (endLine < 0) endLine = text.length();
         
         String line = text.substring(bulletPos, endLine);
-        line.replace("•", "");
+        line.replace("•", "");  // Remove bullet
+        // Remove first character if it's a dash (bullet replacement)
+        if (line.startsWith("-")) {
+          line = line.substring(1);
+        }
         line.trim();
+        
+        Serial.print(F("Processing schedule line: "));
+        Serial.println(line);
         
         int dashPos = line.indexOf("-");
         if (dashPos > 0) {
@@ -287,15 +341,25 @@ void processSMS(const String& header, const String& msg) {
             };
             
             bulletPos = text.indexOf("•", endLine);
+            if (bulletPos < 0) bulletPos = text.indexOf("-", endLine); // Look for next dash
           }
         }
       }
     }
+  } else {
+    Serial.println(F("ERROR: Could not find date range"));
   }
   
   saveSchedules();
   printSchedulesFromEEPROM();
-  if (lastSender.length()) sendSMS(lastSender, "Feeding schedule updated successfully!");
+  
+  if (lastSender.length()) {
+    Serial.print(F("Sending confirmation SMS to: "));
+    Serial.println(lastSender);
+    sendSMS(lastSender, "Feeding schedule updated successfully!");
+  } else {
+    Serial.println(F("ERROR: No sender number available for confirmation"));
+  }
 }
 
 void checkFeed() {
