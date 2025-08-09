@@ -19,6 +19,9 @@ constexpr uint8_t RELAY_PIN        = 6;
 // Configuration Constants
 constexpr uint8_t  MAX_SCHEDULES      = 10;
 constexpr int      EEPROM_BASE_ADDR   = 0;
+constexpr int      LOG_BASE_ADDR      = 500;  // Start logs after schedule data
+constexpr uint8_t  MAX_LOG_ENTRIES    = 20;
+constexpr uint8_t  LOG_ENTRY_SIZE     = 80;
 constexpr float    CALIBRATION_FACTOR = -7050.0f;
 constexpr uint16_t CELL_STABLE_MS     = 2000;
 constexpr uint16_t LOADCELL_UPDATE_MS = 250;
@@ -43,6 +46,7 @@ uint8_t          scheduleCount = 0;
 float            currentWeight  = 0;
 String           lastSender     = "";
 unsigned long    lastLoadcellMS = 0;
+uint8_t          logIndex = 0;
 
 // Forward declarations
 void loadSchedules();
@@ -57,6 +61,9 @@ void checkFeed();
 uint32_t dateToDays(int y, int m, int d);
 uint32_t parseDate(const String&);
 void dispense(float grams);
+void logMessage(const String& msg);
+void printLogs();
+void clearLogs();
 
 void setup() {
   Serial.begin(9600);
@@ -84,6 +91,14 @@ void setup() {
 
   loadSchedules();
   printSchedulesFromEEPROM();
+  
+  // Load log index
+  EEPROM.get(LOG_BASE_ADDR, logIndex);
+  if (logIndex > MAX_LOG_ENTRIES) logIndex = 0;
+  
+  // Print existing logs
+  printLogs();
+  
   setupGSM();
 
   Serial.println(F("=== Fish Feeder Initialized ==="));
@@ -109,9 +124,23 @@ void loop() {
     lastLoadcellMS = now;
   }
   
+  // Check for user commands when connected to laptop
+  if (Serial.available()) {
+    String cmd = Serial.readString();
+    cmd.trim();
+    if (cmd == "LOGS") {
+      printLogs();
+    } else if (cmd == "CLEAR") {
+      clearLogs();
+      Serial.println("Logs cleared!");
+    } else if (cmd == "STATUS") {
+      sendAT("AT+CREG?");
+      sendAT("AT+CSQ");
+    }
+  }
+  
   // DEBUG: Print ALL GSM module output
   if (gsm.available()) {
-    Serial.print("GSM RAW: ");
     String rawData = "";
     while (gsm.available()) {
       char c = gsm.read();
@@ -121,10 +150,46 @@ void loop() {
     Serial.println();
     Serial.println("--- END GSM RAW ---");
     
+    // Log the raw data
+    logMessage("GSM: " + rawData.substring(0, min(70, (int)rawData.length())));
+    
     // Also check if this looks like an SMS
     if (rawData.indexOf("+CMT:") >= 0) {
       Serial.println("*** SMS DETECTED IN RAW DATA! ***");
+      logMessage("SMS DETECTED!");
     }
+  }
+  
+  // Monitor network status every 2 minutes
+  static unsigned long lastStatusCheck = 0;
+  if (millis() - lastStatusCheck > 120000) { // 2 minutes
+    DateTime now = rtc.now();
+    String timeStr = String(now.hour()) + ":" + String(now.minute());
+    
+    // Check network status
+    gsm.println("AT+CREG?");
+    delay(500);
+    String regResponse = "";
+    while (gsm.available()) {
+      regResponse += (char)gsm.read();
+    }
+    
+    gsm.println("AT+CSQ");
+    delay(500);
+    String sigResponse = "";
+    while (gsm.available()) {
+      sigResponse += (char)gsm.read();
+    }
+    
+    // Log network status
+    if (regResponse.indexOf("+CREG:") >= 0) {
+      logMessage(timeStr + " REG:" + regResponse.substring(regResponse.indexOf("+CREG:"), regResponse.indexOf("+CREG:") + 15));
+    }
+    if (sigResponse.indexOf("+CSQ:") >= 0) {
+      logMessage(timeStr + " SIG:" + sigResponse.substring(sigResponse.indexOf("+CSQ:"), sigResponse.indexOf("+CSQ:") + 12));
+    }
+    
+    lastStatusCheck = millis();
   }
   
   checkSMS();
@@ -190,51 +255,38 @@ void sendSMS(const String& to, const String& text) {
 
 void checkSMS() {
   while (gsm.available()) {
-    Serial.println("*** CHECKING SMS - GSM DATA AVAILABLE ***");
+    logMessage("SMS check - data available");
     String header = gsm.readStringUntil('\n');
-    Serial.print("SMS Header: ");
-    Serial.println(header);
     
     if (header.indexOf("+CMT:") >= 0) {
-      Serial.println("*** SMS HEADER FOUND! ***");
+      logMessage("SMS header found!");
       int p1 = header.indexOf('"');
       int p2 = header.indexOf('"', p1 + 1);
       if (p1 >= 0 && p2 > p1) {
         lastSender = header.substring(p1 + 1, p2);
-        Serial.print("Sender extracted: ");
-        Serial.println(lastSender);
+        logMessage("Sender: " + lastSender);
         
         delay(200);
         String msg = gsm.readString();
-        Serial.print("Message content: ");
-        Serial.println(msg);
-        Serial.println("--- END MESSAGE ---");
+        logMessage("Msg: " + msg.substring(0, min(50, (int)msg.length())));
         
         processSMS(header, msg);
       } else {
-        Serial.println("ERROR: Could not extract sender from header");
+        logMessage("ERROR: Could not extract sender");
       }
-    } else {
-      Serial.println("No +CMT: found in header");
     }
   }
 }
 
 void processSMS(const String& header, const String& msg) {
-  Serial.println(F("\n*** PROCESSING SMS ***"));
-  Serial.print(F("Message starts with: "));
-  Serial.println(msg.substring(0, min(30, (int)msg.length())));
+  logMessage("Processing SMS...");
   
   if (!msg.startsWith("New feeding schedule")) {
-    Serial.println(F("ERROR: Message does not start with 'New feeding schedule'"));
-    Serial.println(F("Expected: 'New feeding schedule'"));
-    Serial.print(F("Got: '"));
-    Serial.print(msg.substring(0, min(20, (int)msg.length())));
-    Serial.println(F("'"));
+    logMessage("ERROR: Wrong format");
     return;
   }
 
-  Serial.println(F("✓ Message format validated"));
+  logMessage("SMS format OK");
   scheduleCount = 0;
   String text = msg;
   text.replace("\r", "");
@@ -244,18 +296,12 @@ void processSMS(const String& header, const String& msg) {
   int dateEnd = text.indexOf(":", dateStart);
   if (dateStart > 0 && dateEnd > dateStart) {
     String dateLine = text.substring(dateStart, dateEnd);
-    Serial.print(F("Date line found: "));
-    Serial.println(dateLine);
+    logMessage("Date: " + dateLine.substring(0, min(30, (int)dateLine.length())));
     
     int dashPos = dateLine.indexOf("-");
     if (dashPos > 0) {
       String startDate = dateLine.substring(0, dashPos);
       String endDate = dateLine.substring(dashPos + 1);
-      
-      Serial.print(F("Start date: "));
-      Serial.println(startDate);
-      Serial.print(F("End date: "));
-      Serial.println(endDate);
       
       uint32_t startDay = parseDate(startDate);
       uint32_t endDay = parseDate(endDate);
@@ -276,8 +322,7 @@ void processSMS(const String& header, const String& msg) {
         }
         line.trim();
         
-        Serial.print(F("Processing schedule line: "));
-        Serial.println(line);
+        logMessage("Line: " + line);
         
         int dashPos = line.indexOf("-");
         if (dashPos > 0) {
@@ -320,16 +365,8 @@ void processSMS(const String& header, const String& msg) {
               period = "AM";
             }
             
-            Serial.print(F("Added schedule: "));
-            Serial.print(displayHour);
-            Serial.print(':');
-            if (minute < 10) Serial.print('0');
-            Serial.print(minute);
-            Serial.print(' ');
-            Serial.print(period);
-            Serial.print(F(" — "));
-            Serial.print(amount);
-            Serial.println(F("g"));
+            String schedMsg = "Added: " + String(displayHour) + ":" + (minute<10?"0":"") + String(minute) + " " + period + " - " + String(amount) + "g";
+            logMessage(schedMsg);
             
             schedules[scheduleCount++] = { 
               uint8_t(hour), 
@@ -347,18 +384,16 @@ void processSMS(const String& header, const String& msg) {
       }
     }
   } else {
-    Serial.println(F("ERROR: Could not find date range"));
+    logMessage("ERROR: No date range found");
   }
   
   saveSchedules();
-  printSchedulesFromEEPROM();
   
   if (lastSender.length()) {
-    Serial.print(F("Sending confirmation SMS to: "));
-    Serial.println(lastSender);
+    logMessage("Sending confirmation to: " + lastSender);
     sendSMS(lastSender, "Feeding schedule updated successfully!");
   } else {
-    Serial.println(F("ERROR: No sender number available for confirmation"));
+    logMessage("ERROR: No sender for confirmation");
   }
 }
 
@@ -455,4 +490,77 @@ uint32_t parseDate(const String& s) {
   int day = str.substring(4, 6).toInt();
   int year = str.substring(8, 12).toInt();
   return dateToDays(year, mon, day);
+}
+
+void logMessage(const String& msg) {
+  // Get current time
+  DateTime now = rtc.now();
+  String timeStr = String(now.hour()) + ":" + (now.minute()<10?"0":"") + String(now.minute()) + " ";
+  
+  // Prepare log entry (time + message, max 80 chars)
+  String logEntry = timeStr + msg;
+  if (logEntry.length() > LOG_ENTRY_SIZE-1) {
+    logEntry = logEntry.substring(0, LOG_ENTRY_SIZE-1);
+  }
+  
+  // Calculate EEPROM address
+  int addr = LOG_BASE_ADDR + 1 + (logIndex * LOG_ENTRY_SIZE);
+  
+  // Write to EEPROM
+  for (int i = 0; i < LOG_ENTRY_SIZE; i++) {
+    if (i < logEntry.length()) {
+      EEPROM.write(addr + i, logEntry[i]);
+    } else {
+      EEPROM.write(addr + i, 0); // Null terminator
+    }
+  }
+  
+  // Update log index
+  logIndex = (logIndex + 1) % MAX_LOG_ENTRIES;
+  EEPROM.put(LOG_BASE_ADDR, logIndex);
+  
+  // Also print to Serial if connected
+  Serial.println("LOG: " + logEntry);
+}
+
+void printLogs() {
+  Serial.println(F("\n=== STORED LOGS ==="));
+  
+  // Read log index
+  uint8_t currentIndex;
+  EEPROM.get(LOG_BASE_ADDR, currentIndex);
+  if (currentIndex > MAX_LOG_ENTRIES) currentIndex = 0;
+  
+  // Print logs in order (oldest first)
+  for (int i = 0; i < MAX_LOG_ENTRIES; i++) {
+    int logNum = (currentIndex + i) % MAX_LOG_ENTRIES;
+    int addr = LOG_BASE_ADDR + 1 + (logNum * LOG_ENTRY_SIZE);
+    
+    // Read log entry
+    String logEntry = "";
+    for (int j = 0; j < LOG_ENTRY_SIZE; j++) {
+      char c = EEPROM.read(addr + j);
+      if (c == 0) break; // Null terminator
+      logEntry += c;
+    }
+    
+    if (logEntry.length() > 0) {
+      Serial.print(F("LOG "));
+      Serial.print(i + 1);
+      Serial.print(F(": "));
+      Serial.println(logEntry);
+    }
+  }
+  Serial.println(F("=== END LOGS ==="));
+  Serial.println(F("Commands: LOGS (show logs), CLEAR (clear logs), STATUS (check network)"));
+}
+
+void clearLogs() {
+  logIndex = 0;
+  EEPROM.put(LOG_BASE_ADDR, logIndex);
+  
+  // Clear all log entries
+  for (int i = 0; i < MAX_LOG_ENTRIES * LOG_ENTRY_SIZE; i++) {
+    EEPROM.write(LOG_BASE_ADDR + 1 + i, 0);
+  }
 }
