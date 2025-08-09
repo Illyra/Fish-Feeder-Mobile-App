@@ -91,7 +91,7 @@ public class SmsUtils {
             String time = timeParts[0];
             String quantity = timeParts[1];
             
-            message.append("• ")
+            message.append("- ")
                   .append(time)
                   .append(" - ")
                   .append(quantity)
@@ -104,10 +104,16 @@ public class SmsUtils {
 
         try {
             SmsManager smsManager = SmsManager.getDefault();
-            ArrayList<String> parts = smsManager.divideMessage(message.toString());
+            String finalMessage = message.toString();
+            
+            // Force ASCII/GSM 7-bit encoding by removing any non-ASCII characters
+            finalMessage = finalMessage.replaceAll("[^\\x00-\\x7F]", "");
+            
+            ArrayList<String> parts = smsManager.divideMessage(finalMessage);
             smsManager.sendMultipartTextMessage(phoneNumber, null, parts, null, null);
             
             Toast.makeText(activity, "Schedule notification sent", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "SMS sent to " + phoneNumber + " with " + parts.size() + " parts");
         } catch (Exception e) {
             Toast.makeText(activity, "Failed to send SMS notification", Toast.LENGTH_SHORT).show();
             Log.e(TAG, "SMS send error", e);

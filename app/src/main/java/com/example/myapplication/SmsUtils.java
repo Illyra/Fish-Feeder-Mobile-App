@@ -13,6 +13,7 @@ import androidx.core.content.ContextCompat;
 import com.example.myapplication.database.FeedingSchedule;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -41,22 +42,32 @@ public class SmsUtils {
         String startDate = dateFormat.format(new Date(firstSchedule.getStartDate()));
         String endDate = dateFormat.format(new Date(firstSchedule.getEndDate()));
 
-        // Build schedule message
+        // Build schedule message in Arduino-compatible format
         StringBuilder messageBuilder = new StringBuilder();
-        messageBuilder.append("FISH FEEDER: Schedule for ").append(fishName).append("\n");
-        messageBuilder.append("Schedule: ").append(firstSchedule.getScheduleName()).append("\n");
-        messageBuilder.append("Dates: ").append(startDate).append(" - ").append(endDate).append("\n\n");
-        messageBuilder.append("Feeding times:\n");
+        messageBuilder.append("New feeding schedule for ").append(fishName).append("\n\n");
+        messageBuilder.append(startDate).append(" - ").append(endDate).append(":\n");
 
         for (FeedingSchedule schedule : schedules) {
-            messageBuilder.append("• ").append(schedule.getFeedingTime())
+            messageBuilder.append("- ").append(schedule.getFeedingTime())
                     .append(" - ").append(schedule.getFeedQuantity()).append("g\n");
         }
 
         try {
             SmsManager smsManager = SmsManager.getDefault();
-            smsManager.sendTextMessage(phoneNumber, null, messageBuilder.toString(), null, null);
-            Log.d(TAG, "SMS sent to " + phoneNumber);
+            String message = messageBuilder.toString();
+            
+            // Force ASCII/GSM 7-bit encoding by removing any non-ASCII characters
+            message = message.replaceAll("[^\\x00-\\x7F]", "");
+            
+            // Split long messages if needed
+            if (message.length() > 160) {
+                ArrayList<String> parts = smsManager.divideMessage(message);
+                smsManager.sendMultipartTextMessage(phoneNumber, null, parts, null, null);
+                Log.d(TAG, "Multi-part SMS sent to " + phoneNumber + " (" + parts.size() + " parts)");
+            } else {
+                smsManager.sendTextMessage(phoneNumber, null, message, null, null);
+                Log.d(TAG, "SMS sent to " + phoneNumber);
+            }
         } catch (Exception e) {
             Log.e(TAG, "Failed to send SMS: " + e.getMessage());
             Toast.makeText(context, "Failed to send SMS: " + e.getMessage(), Toast.LENGTH_SHORT).show();
